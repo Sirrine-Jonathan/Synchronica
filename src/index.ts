@@ -14,11 +14,11 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   try {
-    const res = await fetch(process.env.FRIENDLI_API_URL!, {
+    const res = await fetch(process.env.FRIENDLI_ENDPOINT!, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.FRIENDLI_API_KEY}`,
+        "Authorization": `Bearer ${process.env.FRIENDLI_TOKEN}`,
       },
       body: JSON.stringify({
         messages: [
@@ -28,6 +28,7 @@ client.on("messageCreate", async (message) => {
     });
 
     const data = await res.json();
+		console.log(data);
     const reply = data.reply || data.choices?.[0]?.message?.content || "🤖 I'm speechless.";
     message.reply(reply);
   } catch (err) {
