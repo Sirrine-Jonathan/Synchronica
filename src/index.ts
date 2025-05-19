@@ -14,22 +14,7 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   try {
-    const res = await fetch(process.env.FRIENDLI_ENDPOINT!, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.FRIENDLI_TOKEN}`,
-      },
-      body: JSON.stringify({
-        messages: [
-          { role: "user", content: message.content }
-        ],
-      }),
-    });
-
-    const data = await res.json();
-		console.log(data);
-    const reply = data.reply || data.choices?.[0]?.message?.content || "🤖 I'm speechless.";
+    const reply = await chat(message.content);
     message.reply(reply);
   } catch (err) {
     console.error("Friendli API error:", err);
@@ -38,3 +23,43 @@ client.on("messageCreate", async (message) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+async function chat(msg = "How are you?") {
+	const endpoint = "https://api.friendli.ai/dedicated/v1/completions";
+	const model = process.env.FRIENDLI_ID!;
+	const token = process.env.FRIENDLI_TOKEN!;
+
+	try {
+		const res = await fetch(endpoint, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"Authorization": `Bearer ${token}`,
+			},
+			body: JSON.stringify({
+				model,
+				prompt: msg,
+			}),
+		});
+
+		if (!res.ok) {
+			const errText = await res.text();
+			console.error("Friendli Error:", res.status, errText);
+			throw new Error(`Friendli API error: ${res.status}`);
+		}
+
+		const data = await res.json();
+		const reply = data.choices?.[0]?.text;
+
+		if (!reply) {
+			console.warn("No content returned from Friendli");
+			return "🤖 ...no response from model.";
+		}
+
+		return reply.trim();
+
+	} catch (err) {
+		console.error("chat() failed:", err);
+		return "⚠️ Something went wrong talking to Friendli.";
+	}
+}
