@@ -10,11 +10,29 @@ client.once('ready', () => {
   console.log(`Logged in as ${client.user?.tag}`);
 });
 
-client.on('messageCreate', async (message) => {
+client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  if (message.content.toLowerCase().includes("synchronica")) {
-    await message.reply("👁️ I see all.");
+  try {
+    const res = await fetch(process.env.FRIENDLI_API_URL!, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.FRIENDLI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "user", content: message.content }
+        ],
+      }),
+    });
+
+    const data = await res.json();
+    const reply = data.reply || data.choices?.[0]?.message?.content || "🤖 I'm speechless.";
+    message.reply(reply);
+  } catch (err) {
+    console.error("Friendli API error:", err);
+    message.reply("😵 Something went wrong talking to the brain.");
   }
 });
 
